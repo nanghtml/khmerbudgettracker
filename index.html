@@ -1,0 +1,1488 @@
+<!DOCTYPE html>
+<html lang="km" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <title>កាបូបលុយខ្ញុំ - Khmer Budget Tracker</title>
+  <!-- Prevents native zooming on focus on mobile browsers -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts: Kantumruy Pro for Beautiful Khmer Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons CDN for Clean SVG Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Kantumruy Pro', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Prevent select/drag and double-tap zoom on iOS */
+    body {
+      touch-action: manipulation;
+      -webkit-text-size-adjust: 100%;
+      user-select: none;
+      font-family: 'Kantumruy Pro', sans-serif;
+    }
+    input[type="text"], input[type="number"], input[type="date"], select, textarea {
+      font-size: 16px !important; /* Strictly prevents iOS Safari from auto-zooming on focus */
+    }
+    /* Hide scrollbars but keep functionality */
+    .scrollbar-none::-webkit-scrollbar {
+      display: none;
+    }
+    .scrollbar-none {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    /* Simple keyframe fade animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.3s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="bg-slate-50/80 text-slate-800 h-full flex flex-col justify-between overflow-x-hidden">
+
+  <!-- --- MASTER NAVIGATION HEADER --- -->
+  <header class="bg-white/90 backdrop-blur-md border-b border-slate-200/50 sticky top-0 z-40 px-5 py-3.5 flex items-center justify-between shadow-sm">
+    <div class="flex items-center space-x-3">
+      <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-sky-400 flex items-center justify-center text-white shadow-md shadow-indigo-100/50">
+        <i data-lucide="wallet" class="w-5.5 h-5.5"></i>
+      </div>
+      <div>
+        <h1 class="text-md font-extrabold text-slate-900 tracking-tight leading-none">កាបូបលុយខ្ញុំ</h1>
+        <p class="text-[10px] text-indigo-500 font-bold mt-1.5 uppercase tracking-wider">Premium HTML</p>
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-2">
+      <!-- Currency Switcher KHR / USD -->
+      <div class="flex items-center bg-slate-100 border border-slate-200/40 rounded-2xl p-0.5">
+        <button id="btnCurrencyKHR" onclick="toggleCurrency('KHR')" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-white text-indigo-600 shadow-sm">
+          ៛ រៀល
+        </button>
+        <button id="btnCurrencyUSD" onclick="toggleCurrency('USD')" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all text-slate-400">
+          $ USD
+        </button>
+      </div>
+
+      <!-- Help Info Guide button -->
+      <button onclick="toggleModal('guideModal', true)" class="w-9 h-9 flex items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors">
+        <i data-lucide="book-open" class="w-4 h-4"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- --- MAIN CONTENT HOST --- -->
+  <main class="flex-1 max-w-md w-full mx-auto p-4 space-y-5 overflow-y-auto">
+
+    <!-- 1. DASHBOARD PAGE -->
+    <section id="tab-dashboard" class="space-y-5 animate-fade-in">
+      
+      <!-- Premium Holographic Budget Balance Card -->
+      <div class="bg-gradient-to-br from-slate-900 via-indigo-950 to-indigo-900 text-white rounded-[32px] p-6 shadow-xl shadow-indigo-100/40 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-36 h-36 bg-sky-400/10 rounded-full blur-3xl -mr-8 -mt-8"></div>
+        <div class="absolute -left-12 -bottom-12 w-32 h-32 bg-purple-500/15 rounded-full blur-2xl"></div>
+        
+        <div class="flex justify-between items-start">
+          <div>
+            <span class="text-[10px] font-bold text-indigo-200 uppercase tracking-widest block">សមតុល្យលុយខែនេះ</span>
+            <span id="currentBalanceText" class="text-3xl font-extrabold tracking-tight mt-1.5 block">៛0</span>
+          </div>
+          <button onclick="openBudgetConfig()" class="flex items-center space-x-1.5 px-3.5 py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-2xl backdrop-blur-md transition-all">
+            <i data-lucide="edit-3" class="w-3.5 h-3.5 text-indigo-200"></i>
+            <span class="text-[10px] font-bold text-white">កែសម្រួល</span>
+          </button>
+        </div>
+
+        <!-- Linear Progress bar for monthly budget limit -->
+        <div class="space-y-2 mt-6">
+          <div class="flex justify-between text-xs text-indigo-100 font-medium">
+            <span id="monthlyBudgetTargetText">កញ្ចប់ថវិការួម: ៛1,200,000</span>
+            <span id="spentPercentageText" class="font-bold">0%</span>
+          </div>
+          <div class="w-full bg-white/10 h-3 rounded-full overflow-hidden p-0.5 border border-white/5">
+            <div id="spentProgressBar" class="h-full rounded-full bg-gradient-to-r from-teal-300 via-emerald-400 to-sky-400 transition-all duration-500 shadow-sm" style="width: 0%"></div>
+          </div>
+          <div class="flex justify-between text-[10px] text-indigo-200/90 pt-0.5">
+            <span>នៅសល់លុយដកចំណាយ:</span>
+            <span id="remainingBudgetText" class="font-extrabold text-white">៛1,200,000</span>
+          </div>
+        </div>
+
+        <!-- Expense and Income Ledgers -->
+        <div class="grid grid-cols-2 gap-4 border-t border-white/10 mt-6 pt-5">
+          <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-emerald-400">
+              <i data-lucide="arrow-down-right" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <span class="text-[9px] text-indigo-200 block uppercase font-bold">ប្រាក់ចំណូលសរុប</span>
+              <span id="totalIncomeText" class="text-xs font-extrabold text-white">៛0</span>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-rose-400">
+              <i data-lucide="arrow-up-right" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <span class="text-[9px] text-indigo-200 block uppercase font-bold">ការចំណាយសរុប</span>
+              <span id="totalExpenseText" class="text-xs font-extrabold text-white">៛0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Feature Shortcut Buttons Grid -->
+      <div class="grid grid-cols-3 gap-2.5 text-center">
+        <button onclick="switchTab('savings')" class="bg-white hover:bg-slate-50 border border-slate-200/40 p-3.5 rounded-2xl flex flex-col items-center justify-center transition-all shadow-sm">
+          <i data-lucide="target" class="w-5 h-5 text-indigo-600 mb-1.5"></i>
+          <span class="text-[10px] font-extrabold text-slate-700">គោលដៅសន្សំ</span>
+        </button>
+        <button onclick="switchTab('savings')" class="bg-white hover:bg-slate-50 border border-slate-200/40 p-3.5 rounded-2xl flex flex-col items-center justify-center transition-all shadow-sm">
+          <i data-lucide="users" class="w-5 h-5 text-sky-500 mb-1.5"></i>
+          <span class="text-[10px] font-extrabold text-slate-700">ចែកលុយគ្នា</span>
+        </button>
+        <button onclick="openExportModal()" class="bg-white hover:bg-slate-50 border border-slate-200/40 p-3.5 rounded-2xl flex flex-col items-center justify-center transition-all shadow-sm">
+          <i data-lucide="download" class="w-5 h-5 text-emerald-500 mb-1.5"></i>
+          <span class="text-[10px] font-extrabold text-slate-700">របាយការណ៍</span>
+        </button>
+      </div>
+
+      <!-- Quick Spending Launcher Category Hub -->
+      <div class="bg-white rounded-[28px] p-5 border border-slate-200/40 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-extrabold text-slate-800 text-sm">ចុចចំណាយរហ័ស</h3>
+          <span class="text-[10px] bg-slate-100 text-slate-500 font-bold px-2 py-0.5 rounded-full">Slide</span>
+        </div>
+        
+        <div id="quickSpendSlider" class="flex space-x-3.5 overflow-x-auto pb-2 scrollbar-none">
+          <!-- Dynamic rendering inside javascript -->
+        </div>
+      </div>
+
+      <!-- Recent Transactions List Card -->
+      <div class="space-y-3.5">
+        <div class="flex items-center justify-between">
+          <h3 class="font-extrabold text-slate-800 text-sm">ប្រតិបត្តិការចុងក្រោយ</h3>
+          <button onclick="switchTab('transactions')" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center space-x-1">
+            <span>មើលទាំងអស់</span> 
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+
+        <div id="recentTransactionsList" class="bg-white rounded-[28px] p-2.5 shadow-sm border border-slate-200/40 divide-y divide-slate-100">
+          <!-- Dynamic transactions list -->
+        </div>
+      </div>
+
+      <!-- Category Spending Chart Breakdown Card -->
+      <div class="space-y-3.5">
+        <h3 class="font-extrabold text-slate-800 text-sm">ចំណាយតាមប្រភេទចំណាយ</h3>
+        <div id="categorySpendingChart" class="bg-white rounded-[28px] p-5 shadow-sm border border-slate-200/40 space-y-4">
+          <!-- Dynamic category chart progress blocks -->
+        </div>
+      </div>
+
+    </section>
+
+    <!-- 2. TRANSACTIONS PAGE -->
+    <section id="tab-transactions" class="space-y-4 hidden animate-fade-in">
+      <div class="flex items-center justify-between">
+        <h2 class="text-md font-extrabold text-slate-900">ប្រវត្តិប្រតិបត្តិការ</h2>
+        <span id="transactionsCountBadge" class="text-[10px] bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full font-bold">សរុប 0 ដង</span>
+      </div>
+
+      <div class="relative">
+        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+          <i data-lucide="search" class="w-4 h-4"></i>
+        </span>
+        <input id="searchInput" type="text" oninput="renderTransactionsList()" placeholder="ស្វែងរកឈ្មោះប្រតិបត្តិការ..." class="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-slate-800 placeholder-slate-400 text-base font-semibold focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none">
+      </div>
+
+      <div id="fullTransactionsList" class="bg-white rounded-[28px] p-2.5 shadow-sm border border-slate-200/40 divide-y divide-slate-100">
+        <!-- Dynamic transactions ledger -->
+      </div>
+    </section>
+
+    <!-- 3. CATEGORIES MANAGER PAGE -->
+    <section id="tab-categories" class="space-y-4 hidden animate-fade-in">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-md font-extrabold text-slate-900">គ្រប់គ្រងប្រភេទចំណាយ</h2>
+          <p class="text-[10px] text-slate-400">កំណត់ប្រភេទចំណាយ និងថវិការប្រចាំខែ</p>
+        </div>
+        <button onclick="openCategoryCreate()" class="px-3.5 py-2.5 bg-indigo-600 text-white rounded-2xl text-xs font-bold flex items-center space-x-1 hover:bg-indigo-700 transition-colors shadow-md">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          <span>បង្កើតថ្មី</span>
+        </button>
+      </div>
+
+      <div id="categoriesList" class="grid grid-cols-1 gap-3.5">
+        <!-- Dynamic Category Cards list -->
+      </div>
+    </section>
+
+    <!-- 4. SAVINGS GOALS & BILL SPLITTER -->
+    <section id="tab-savings" class="space-y-5 hidden animate-fade-in">
+      
+      <!-- Saving Goals Section Header -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-md font-extrabold text-slate-900">គោលដៅសន្សំប្រាក់</h2>
+            <p class="text-[10px] text-slate-400">តាមដានគម្រោងសន្សំទិញរបស់ប្រើប្រាស់</p>
+          </div>
+          <button onclick="openSavingCreate()" class="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-xs font-bold flex items-center space-x-1">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            <span>បង្កើតថ្មី</span>
+          </button>
+        </div>
+
+        <div id="savingsGoalsContainer" class="grid grid-cols-1 gap-3.5">
+          <!-- Dynamic savings goal blocks -->
+        </div>
+      </div>
+
+      <!-- Elegant Bill Splitter Box -->
+      <div class="bg-white rounded-[28px] p-5 border border-slate-200/40 shadow-sm space-y-4">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="users" class="w-5 h-5 text-sky-500"></i>
+          <h3 class="font-extrabold text-slate-800 text-sm">ប្រព័ន្ធចែកវិក្កយបត្រ (Bill Splitter)</h3>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-1">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">ទឹកប្រាក់សរុប</label>
+            <input id="splitterTotalInput" type="number" oninput="calculateBillSplit()" placeholder="៥០០០០" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-bold outline-none focus:ring-2 focus:ring-sky-500/10">
+          </div>
+          <div class="space-y-1">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">ចំនួនសមាជិក (នាក់)</label>
+            <input id="splitterPeopleInput" type="number" value="2" oninput="calculateBillSplit()" placeholder="2" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-bold outline-none focus:ring-2 focus:ring-sky-500/10">
+          </div>
+        </div>
+
+        <div id="splitterResultBox" class="bg-sky-50 border border-sky-100/50 rounded-2xl p-4 text-center hidden">
+          <span class="text-[10px] text-sky-600 block font-bold uppercase tracking-wider">ម្នាក់ៗត្រូវបង់លុយ</span>
+          <span id="splitterResultText" class="text-lg font-black text-sky-700 mt-1 block">៛0</span>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- 5. CONFIGURATION SETTINGS -->
+    <section id="tab-settings" class="space-y-4 hidden animate-fade-in">
+      <div>
+        <h2 class="text-md font-extrabold text-slate-900">ការកំណត់ប្រព័ន្ធ</h2>
+        <p class="text-[10px] text-slate-400">គ្រប់គ្រងសមតុល្យ សុវត្ថិភាព និងលុយសរុប</p>
+      </div>
+
+      <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/40 space-y-5">
+        <div class="flex items-center space-x-3.5">
+          <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-lg">
+            🇰🇭
+          </div>
+          <div class="overflow-hidden">
+            <span class="text-[9px] text-slate-400 block font-bold uppercase tracking-wider">របៀបរក្សាទុកទិន្នន័យ</span>
+            <span class="text-xs font-bold text-slate-700 block truncate">Local Storage (សុវត្ថិភាពក្នុងឧបករណ៍)</span>
+          </div>
+        </div>
+
+        <div class="border-t border-slate-100 pt-4 space-y-4">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-bold text-slate-600">ផែនការថវិកាប្រចាំខែ</span>
+            <button onclick="openBudgetConfig()" id="settingsBudgetBtn" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-3.5 py-2 rounded-2xl hover:bg-indigo-100 border border-indigo-100/50 transition-all">
+              ៛1,200,000
+            </button>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-bold text-slate-600">អត្រាប្តូរប្រាក់ស្វ័យប្រវត្ត</span>
+            <span class="text-[10px] font-bold text-slate-400">1 USD = 4,000 KHR</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dynamic notification callout box -->
+      <div class="bg-amber-50/70 border border-amber-100 rounded-3xl p-5 space-y-2.5">
+        <div class="flex items-center space-x-2 text-amber-800">
+          <i data-lucide="info" class="w-4 h-4 flex-shrink-0"></i>
+          <h4 class="font-extrabold text-xs">រក្សាសុវត្ថិភាពទិន្នន័យជានិច្ច</h4>
+        </div>
+        <p class="text-[10px] text-amber-700/90 leading-relaxed font-medium">
+          រាល់ទិន្នន័យចំណាយ និងចំណូលទាំងអស់របស់លោកអ្នកត្រូវបានរក្សាទុកដោយស្វ័យប្រវត្តនៅក្នុង Local Storage នៃឧបករណ៍របស់អ្នក។ ធានាថាមិនបាត់បង់ឡើយ ទោះជាបិទទូរស័ព្ទ ឬបិទកម្មវិធីក៏ដោយ។
+        </p>
+      </div>
+
+      <button onclick="resetAllData()" class="w-full py-3.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-extrabold rounded-2xl text-xs transition-colors border border-rose-100/80">
+        សម្អាតប្រតិបត្តិការទាំងអស់ឡើងវិញ
+      </button>
+    </section>
+
+  </main>
+
+  <!-- --- FLOATING TRIGGER PLUS BUTTON --- -->
+  <button onclick="openTransactionCreate()" class="fixed bottom-24 right-5 w-14 h-14 bg-gradient-to-tr from-indigo-600 to-sky-400 text-white rounded-full flex items-center justify-center shadow-xl shadow-indigo-200/80 hover:scale-105 active:scale-95 transition-transform z-40 border border-white/10">
+    <i data-lucide="plus" class="w-8 h-8"></i>
+  </button>
+
+  <!-- --- BOTTOM BAR NAVIGATION TAB CONTROLLERS --- -->
+  <nav class="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200/50 px-5 py-3 flex justify-between items-center z-40 shadow-xl shadow-slate-100">
+    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="flex flex-col items-center flex-1 py-1 transition-all text-indigo-600 font-bold">
+      <i data-lucide="pie-chart" class="w-5.5 h-5.5"></i>
+      <span class="text-[10px] mt-1.5 font-bold">ទំព័រដើម</span>
+    </button>
+    <button onclick="switchTab('transactions')" id="nav-transactions" class="flex flex-col items-center flex-1 py-1 transition-all text-slate-400">
+      <i data-lucide="calendar" class="w-5.5 h-5.5"></i>
+      <span class="text-[10px] mt-1.5 font-bold">ប្រតិបត្តិការ</span>
+    </button>
+    <button onclick="switchTab('categories')" id="nav-categories" class="flex flex-col items-center flex-1 py-1 transition-all text-slate-400">
+      <i data-lucide="sliders" class="w-5.5 h-5.5"></i>
+      <span class="text-[10px] mt-1.5 font-bold">ប្រភេទ</span>
+    </button>
+    <button onclick="switchTab('savings')" id="nav-savings" class="flex flex-col items-center flex-1 py-1 transition-all text-slate-400">
+      <i data-lucide="target" class="w-5.5 h-5.5"></i>
+      <span class="text-[10px] mt-1.5 font-bold">គោលដៅ/សន្សំ</span>
+    </button>
+    <button onclick="switchTab('settings')" id="nav-settings" class="flex flex-col items-center flex-1 py-1 transition-all text-slate-400">
+      <i data-lucide="settings" class="w-5.5 h-5.5"></i>
+      <span class="text-[10px] mt-1.5 font-bold">ការកំណត់</span>
+    </button>
+  </nav>
+
+  <!-- --- MODAL DIALOGS HOST --- -->
+
+  <!-- 1. EDIT MONTHLY MAIN BUDGET MODAL WITH KEYPAD -->
+  <div id="budgetModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-5 hidden">
+    <div class="bg-white w-full max-w-sm rounded-[32px] p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 class="font-extrabold text-slate-800 text-sm">កំណត់កញ្ចប់ថវិកាសរុប</h3>
+        <button onclick="toggleModal('budgetModal', false)" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        <div class="text-center bg-slate-50 border border-slate-200/50 rounded-2xl py-4">
+          <span class="text-xs text-slate-400 block font-bold uppercase tracking-wider">កញ្ចប់ថវិកាថ្មី</span>
+          <span id="budgetModalValDisplay" class="text-2xl font-extrabold text-indigo-600 mt-1 block">៛0</span>
+        </div>
+
+        <!-- ABA Style Keypad -->
+        <div class="grid grid-cols-3 gap-2 pt-2">
+          <button onclick="pressKeypad('1', 'budget')" class="py-3 bg-slate-100 hover:bg-indigo-50 text-sm font-bold rounded-2xl flex items-center justify-center text-slate-700">1</button>
+          <button onclick="pressKeypad('2', 'budget')" class="py-3 bg-slate-100 hover:bg-indigo-50 text-sm font-bold rounded-2xl flex items-center justify-center text-slate-700">2</button>
+          <button onclick="pressKeypad('3', 'budget')" class="py-3 bg-slate-100 hover:bg-indigo-50 text-sm font-bold rounded-2xl flex items-center justify-center text-slate-700">3</button>
+          <button onclick="pressKeypad('4', 'budget')" class="py-3 bg-slate-100 hover:bg-indigo-50 text-sm font-bold rounded-2xl flex items-center justify-center text-slate-700">4</button>
+          <button onclick="pressKeypad('5', 'budget')" class="py-3 bg-slate-100 hover:bg-indigo-50 text-sm font-bold rounded-2xl flex items-center justify-center text-slate-700">5</button>
+          <button onclick="pressKeypad('6', 'budget')" class="py-3 bg-slate-100 hover:bg-indigo-50 text-sm font-bold rounded-2xl flex items-center justify-center text-slate-700">6</button>
+          <button onclick="pressKeypad('7', 'budget')" class="py-3 bg-slate-100 hover:bg-indigo-50 text-sm font-bold rounded-2xl flex items-center justify-center text-slate-700">7</button>
+          <button onclick="pressKeypad('8', 'budget')" class="py-3 bg-slate-100 hover:bg-indigo-50 text-sm font-bold rounded-2xl flex items-center justify-center text-slate-700">8</button>
+          <button onclick="pressKeypad('9', 'budget')" class="py-3 bg-slate-100 hover:bg-indigo-50 text-sm font-bold rounded-2xl flex items-center justify-center text-slate-700">9</button>
+          <button onclick="pressKeypad('C', 'budget')" class="py-3 bg-slate-100 hover:bg-indigo-50 text-sm font-bold rounded-2xl flex items-center justify-center text-slate-700">C</button>
+          <button onclick="pressKeypad('0', 'budget')" class="py-3 bg-slate-100 hover:bg-indigo-50 text-sm font-bold rounded-2xl flex items-center justify-center text-slate-700">0</button>
+          <button onclick="pressKeypad('B', 'budget')" class="py-3 bg-slate-100 hover:bg-indigo-50 text-sm font-bold rounded-2xl flex items-center justify-center text-slate-700">
+            <i data-lucide="delete" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="flex space-x-3 pt-2">
+        <button onclick="toggleModal('budgetModal', false)" class="flex-1 py-3 bg-slate-100 rounded-2xl font-bold text-xs text-slate-600 hover:bg-slate-200 transition-colors">បោះបង់</button>
+        <button onclick="saveMonthlyBudget()" class="flex-1 py-3 bg-indigo-600 rounded-2xl font-bold text-xs text-white hover:bg-indigo-700 transition-colors shadow-lg">រក្សាទុក</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. ADD & EDIT TRANSACTION MODAL WITH KEYPAD -->
+  <div id="txModal" class="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-end justify-center z-50 p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-t-[32px] rounded-b-[32px] p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between">
+        <h3 id="txModalTitle" class="font-extrabold text-slate-800 text-sm">បន្ថែមប្រតិបត្តិការ</h3>
+        <button onclick="toggleModal('txModal', false)" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Expense vs Income Segmented Controller -->
+      <div class="flex bg-slate-100 p-1.5 rounded-2xl">
+        <button type="button" onclick="setTxType('expense')" id="btnTxExpense" class="flex-1 py-2.5 rounded-xl text-xs font-extrabold transition-all bg-white text-rose-600 shadow-sm">
+          💸 ការចំណាយ
+        </button>
+        <button type="button" onclick="setTxType('income')" id="btnTxIncome" class="flex-1 py-2.5 rounded-xl text-xs font-extrabold transition-all text-slate-400">
+          💰 ចំណូលប្រាក់
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <!-- Title Input (Anti-zoom text-base rule applied) -->
+        <div class="space-y-1.5">
+          <label class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">ចំណងជើង / ការពិពណ៌នា</label>
+          <input id="txTitleInput" type="text" placeholder="ឧ. ទិញបាយថ្ងៃត្រង់, ថ្លៃឡានក្រុង..." class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-slate-800 text-base font-medium focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none">
+        </div>
+
+        <!-- Amount & Tactile Keypad -->
+        <div class="space-y-2">
+          <label class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">ចំនួនទឹកប្រាក់</label>
+          <div class="text-center bg-indigo-50/50 border border-indigo-100/50 rounded-2xl py-3.5">
+            <span id="txAmountValDisplay" class="text-2xl font-black text-indigo-700 tracking-tight">៛0</span>
+          </div>
+
+          <!-- Custom Keyboard -->
+          <div class="grid grid-cols-3 gap-1.5 p-2 bg-slate-100/60 border border-slate-200/40 rounded-2xl">
+            <button type="button" onclick="pressKeypad('1', 'tx')" class="py-3 bg-white hover:bg-indigo-50 text-xs font-black rounded-xl flex items-center justify-center text-slate-700 shadow-2xs">1</button>
+            <button type="button" onclick="pressKeypad('2', 'tx')" class="py-3 bg-white hover:bg-indigo-50 text-xs font-black rounded-xl flex items-center justify-center text-slate-700 shadow-2xs">2</button>
+            <button type="button" onclick="pressKeypad('3', 'tx')" class="py-3 bg-white hover:bg-indigo-50 text-xs font-black rounded-xl flex items-center justify-center text-slate-700 shadow-2xs">3</button>
+            <button type="button" onclick="pressKeypad('4', 'tx')" class="py-3 bg-white hover:bg-indigo-50 text-xs font-black rounded-xl flex items-center justify-center text-slate-700 shadow-2xs">4</button>
+            <button type="button" onclick="pressKeypad('5', 'tx')" class="py-3 bg-white hover:bg-indigo-50 text-xs font-black rounded-xl flex items-center justify-center text-slate-700 shadow-2xs">5</button>
+            <button type="button" onclick="pressKeypad('6', 'tx')" class="py-3 bg-white hover:bg-indigo-50 text-xs font-black rounded-xl flex items-center justify-center text-slate-700 shadow-2xs">6</button>
+            <button type="button" onclick="pressKeypad('7', 'tx')" class="py-3 bg-white hover:bg-indigo-50 text-xs font-black rounded-xl flex items-center justify-center text-slate-700 shadow-2xs">7</button>
+            <button type="button" onclick="pressKeypad('8', 'tx')" class="py-3 bg-white hover:bg-indigo-50 text-xs font-black rounded-xl flex items-center justify-center text-slate-700 shadow-2xs">8</button>
+            <button type="button" onclick="pressKeypad('9', 'tx')" class="py-3 bg-white hover:bg-indigo-50 text-xs font-black rounded-xl flex items-center justify-center text-slate-700 shadow-2xs">9</button>
+            <button type="button" onclick="pressKeypad('C', 'tx')" class="py-3 bg-white hover:bg-indigo-50 text-xs font-black rounded-xl flex items-center justify-center text-slate-700 shadow-2xs">C</button>
+            <button type="button" onclick="pressKeypad('0', 'tx')" class="py-3 bg-white hover:bg-indigo-50 text-xs font-black rounded-xl flex items-center justify-center text-slate-700 shadow-2xs">0</button>
+            <button type="button" onclick="pressKeypad('B', 'tx')" class="py-3 bg-white hover:bg-indigo-50 text-xs font-black rounded-xl flex items-center justify-center text-slate-700 shadow-2xs">
+              <i data-lucide="delete" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Category Grid list dynamically populated inside javascript -->
+        <div id="txCategorySelectorWrapper" class="space-y-1.5">
+          <label class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">ជ្រើសរើសប្រភេទចំណាយ</label>
+          <div id="txCategoryGridSelect" class="grid grid-cols-3 gap-2 max-h-[140px] overflow-y-auto p-2 bg-slate-50 rounded-2xl border border-slate-200/60 font-medium"></div>
+        </div>
+
+        <!-- Date select -->
+        <div class="space-y-1.5">
+          <label class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">កាលបរិច្ឆេទ</label>
+          <input id="txDateInput" type="date" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-slate-800 text-base font-bold focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none">
+        </div>
+
+        <div class="flex space-x-3 pt-2">
+          <button onclick="toggleModal('txModal', false)" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-2xl text-xs transition-colors">បោះបង់</button>
+          <button onclick="saveTransaction()" class="flex-1 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-bold rounded-2xl text-xs transition-all shadow-lg shadow-indigo-100">រក្សាទុក</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. ADD & EDIT CATEGORY MODAL -->
+  <div id="catModal" class="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-end justify-center z-50 p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-t-[32px] rounded-b-[32px] p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 id="catModalTitle" class="font-extrabold text-slate-800 text-sm">បន្ថែមប្រភេទចំណាយថ្មី</h3>
+        <button onclick="toggleModal('catModal', false)" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <div class="space-y-1.5">
+          <label class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">ឈ្មោះប្រភេទចំណាយ</label>
+          <input id="catNameInput" type="text" placeholder="ឧ. ការសិក្សា, សម្លៀកបំពាក់..." class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-slate-800 text-base font-medium focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none">
+        </div>
+
+        <!-- Vector icons selections (using pure dynamic selection) -->
+        <div class="space-y-1.5">
+          <label class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">ជ្រើសរើសរូបតំណាង (Vector Icon)</label>
+          <div class="grid grid-cols-4 gap-2.5 p-3.5 bg-slate-50 rounded-2xl border border-slate-200/60">
+            <button onclick="selectCategoryIcon('Utensils')" id="iconOpt-Utensils" class="py-3 rounded-xl border bg-white border-slate-200 flex items-center justify-center"><i data-lucide="utensils" class="w-5 h-5 text-indigo-600"></i></button>
+            <button onclick="selectCategoryIcon('Home')" id="iconOpt-Home" class="py-3 rounded-xl border bg-white border-slate-200 flex items-center justify-center"><i data-lucide="home" class="w-5 h-5 text-indigo-600"></i></button>
+            <button onclick="selectCategoryIcon('Zap')" id="iconOpt-Zap" class="py-3 rounded-xl border bg-white border-slate-200 flex items-center justify-center"><i data-lucide="zap" class="w-5 h-5 text-indigo-600"></i></button>
+            <button onclick="selectCategoryIcon('Bike')" id="iconOpt-Bike" class="py-3 rounded-xl border bg-white border-slate-200 flex items-center justify-center"><i data-lucide="bike" class="w-5 h-5 text-indigo-600"></i></button>
+            <button onclick="selectCategoryIcon('Gamepad2')" id="iconOpt-Gamepad2" class="py-3 rounded-xl border bg-white border-slate-200 flex items-center justify-center"><i data-lucide="gamepad-2" class="w-5 h-5 text-indigo-600"></i></button>
+            <button onclick="selectCategoryIcon('ShoppingBag')" id="iconOpt-ShoppingBag" class="py-3 rounded-xl border bg-white border-slate-200 flex items-center justify-center"><i data-lucide="shopping-bag" class="w-5 h-5 text-indigo-600"></i></button>
+            <button onclick="selectCategoryIcon('Folder')" id="iconOpt-Folder" class="py-3 rounded-xl border bg-white border-indigo-600 bg-indigo-50 flex items-center justify-center"><i data-lucide="folder" class="w-5 h-5 text-indigo-600"></i></button>
+          </div>
+        </div>
+
+        <!-- Color pickers -->
+        <div class="space-y-1.5">
+          <label class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">ជ្រើសរើសពណ៌</label>
+          <div class="flex flex-wrap gap-2.5 p-3.5 bg-slate-50 rounded-2xl border border-slate-200/60">
+            <button onclick="selectCategoryColor('#FF7675')" class="color-picker-dot w-8 h-8 rounded-full border border-black/10 animate-pulse-slow" style="background-color: #FF7675;"></button>
+            <button onclick="selectCategoryColor('#74B9FF')" class="color-picker-dot w-8 h-8 rounded-full border border-black/10 animate-pulse-slow" style="background-color: #74B9FF;"></button>
+            <button onclick="selectCategoryColor('#FFEAA7')" class="color-picker-dot w-8 h-8 rounded-full border border-black/10 animate-pulse-slow" style="background-color: #FFEAA7;"></button>
+            <button onclick="selectCategoryColor('#55E6C1')" class="color-picker-dot w-8 h-8 rounded-full border border-black/10 animate-pulse-slow" style="background-color: #55E6C1;"></button>
+            <button onclick="selectCategoryColor('#A29BFE')" class="color-picker-dot w-8 h-8 rounded-full border border-black/10 animate-pulse-slow" style="background-color: #A29BFE;"></button>
+            <button onclick="selectCategoryColor('#868E96')" class="color-picker-dot w-8 h-8 rounded-full border border-black/10 animate-pulse-slow" style="background-color: #868E96;"></button>
+          </div>
+        </div>
+
+        <!-- Category budget limit -->
+        <div class="space-y-1.5">
+          <label class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">កញ្ចប់ថវិការៀងរាល់ខែ (មិនបង្ខំ)</label>
+          <input id="catBudgetInput" type="number" placeholder="៥០០០០" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-base font-bold outline-none">
+        </div>
+
+        <div class="flex space-x-3 pt-2">
+          <button onclick="toggleModal('catModal', false)" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-2xl text-xs transition-colors">បោះបង់</button>
+          <button onclick="saveCategory()" class="flex-1 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-bold rounded-2xl text-xs transition-all shadow-lg">រក្សាទុក</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. ADD & EDIT SAVING GOALS -->
+  <div id="savingModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-5 hidden">
+    <div class="bg-white w-full max-w-sm rounded-[32px] p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 id="savingModalTitle" class="font-extrabold text-slate-800 text-sm">បង្កើតគោលដៅសន្សំថ្មី</h3>
+        <button onclick="toggleModal('savingModal', false)" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        <div class="space-y-1">
+          <label class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">ឈ្មោះគោលដៅ</label>
+          <input id="savingTitleInput" type="text" placeholder="ឧ. ទិញម៉ូតូថ្មី, ទិញទូរស័ព្ទ..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-semibold outline-none">
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">ចំនួនលុយគោលដៅ</label>
+          <input id="savingTargetInput" type="number" placeholder="ឧ. ៦០០០០០" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-bold outline-none">
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">លុយសន្សំបានបច្ចុប្បន្ន</label>
+          <input id="savingSavedInput" type="number" placeholder="ឧ. ១០០០០០" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-bold outline-none">
+        </div>
+      </div>
+
+      <div class="flex space-x-2 pt-2">
+        <button onclick="toggleModal('savingModal', false)" class="flex-1 py-2.5 bg-slate-100 rounded-xl font-bold text-xs">បោះបង់</button>
+        <button onclick="saveSavingGoal()" class="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-xs shadow-md">រក្សាទុក</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. EXPORT DATA REPORT DIALOG -->
+  <div id="exportModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-5 hidden">
+    <div class="bg-white w-full max-w-sm rounded-[32px] p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 class="font-extrabold text-slate-800 text-sm">នាំចេញរបាយការណ៍ហិរញ្ញវត្ថុ</h3>
+        <button onclick="toggleModal('exportModal', false)" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        <textarea id="exportTextArea" readonly class="w-full h-48 bg-slate-50 border border-slate-200 rounded-xl p-3 text-[10px] font-mono leading-relaxed outline-none"></textarea>
+        <p class="text-[9px] text-slate-400 leading-normal">
+          លោកអ្នកអាចចម្លង (Copy) របាយការណ៍នេះ ដើម្បីផ្ញើទៅកាន់ Telegram, Messenger ឬរក្សាទុកក្នុង Note ផ្ទាល់ខ្លួនបានយ៉ាងងាយស្រួល។
+        </p>
+      </div>
+
+      <div class="flex space-x-2">
+        <button onclick="toggleModal('exportModal', false)" class="flex-1 py-2.5 bg-slate-100 rounded-xl font-bold text-xs">បិទ</button>
+        <button onclick="copyExportToClipboard()" class="flex-1 py-2.5 bg-emerald-600 text-white rounded-xl font-bold text-xs flex items-center justify-center space-x-1 shadow-md">
+          <i data-lucide="clipboard" class="w-3.5 h-3.5 mr-1"></i>
+          <span>ចម្លងរបាយការណ៍</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. KHMER USER GUIDE MODAL -->
+  <div id="guideModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-5 hidden">
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 space-y-4 shadow-2xl max-h-[80vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="book-open" class="w-5 h-5 text-indigo-600"></i>
+          <h3 class="font-extrabold text-slate-800 text-sm">ណែនាំរបៀបប្រើប្រាស់</h3>
+        </div>
+        <button onclick="toggleModal('guideModal', false)" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4 text-xs text-slate-600 leading-relaxed font-semibold">
+        <div class="space-y-1">
+          <h4 class="font-extrabold text-slate-800 text-xs text-indigo-600">១. ការពារការ Zoom ចេញចូលអេក្រង់ ១០០% 📱:</h4>
+          <p>រាល់ប្រអប់បញ្ចូលអត្ថបទ (Input Fields) ទាំងអស់ត្រូវបានកំណត់ទំហំអក្សរយ៉ាងតិច ១៦ភិចសែល (16px) ព្រមទាំងភ្ជាប់ជាមួយ Meta blocker ធានាថាមិនមានការ Zoom រំខានពេលកំពុងវាយបញ្ចូលទិន្នន័យឡើយ។</p>
+        </div>
+
+        <div class="space-y-1">
+          <h4 class="font-extrabold text-slate-800 text-xs">២. ក្តារចុច Tactile Keypad ផ្ទាល់ខ្លួន 🔢:</h4>
+          <p>ក្តារចុចលេខរចនាឡើងក្នុងកម្មវិធីផ្ទាល់ (In-app Keypad) សម្រាប់វាយចំនួនលុយ ធានាថាមិនចាំបាច់ប្រើក្តារចុចទូរស័ព្ទមកបាំង ឬ Zoom អេក្រង់ឡើយ。</p>
+        </div>
+
+        <div class="space-y-1">
+          <h4 class="font-extrabold text-slate-800 text-xs">៣. សេវាពពក Cloud Sync Local Storage ☁️:</h4>
+          <p>រាល់ទិន្នន័យចំណាយ-ចំណូល និងការកំណត់ត្រូវបានរក្សាទុកដោយស្វ័យប្រវត្តនៅក្នុង Local Storage នៃ Browser ឧបករណ៍ផ្ទាល់ខ្លួនរបស់អ្នក សុវត្ថិភាពបំផុត។</p>
+        </div>
+      </div>
+
+      <button onclick="toggleModal('guideModal', false)" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl text-xs transition-colors shadow-lg">
+        យល់ព្រម និងបន្តប្រើប្រាស់
+      </button>
+    </div>
+  </div>
+
+
+  <!-- --- CORE VANILLA JAVASCRIPT SYSTEM --- -->
+  <script>
+    // Define DEFAULT_CATEGORIES early to avoid Reference Error
+    const DEFAULT_CATEGORIES = [
+      { id: 'cat-1', name: 'ចំណីអាហារ', iconName: 'Utensils', color: '#FF7675', budget: 400000 },
+      { id: 'cat-2', name: 'ផ្ទះសម្បែង', iconName: 'Home', color: '#74B9FF', budget: 600000 },
+      { id: 'cat-3', name: 'ទឹក និងភ្លើង', iconName: 'Zap', color: '#FFD2F2', budget: 200000 },
+      { id: 'cat-4', name: 'ការធ្វើដំណើរ', iconName: 'Bike', color: '#55E6C1', budget: 150000 },
+      { id: 'cat-5', name: 'ការកម្សាន្ត', iconName: 'Gamepad2', color: '#A29BFE', budget: 200000 },
+      { id: 'cat-6', name: 'ផ្សេងៗ', iconName: 'ShoppingBag', color: '#868E96', budget: 100000 }
+    ];
+
+    const EXCHANGE_RATE = 4000; // 1 USD = 4000 KHR
+    let currentCurrency = 'KHR';
+    let appState = {
+      monthlyBudget: 1200000,
+      categories: [...DEFAULT_CATEGORIES],
+      transactions: [],
+      savings: []
+    };
+
+    // Form inputs state trackers
+    let budgetInputStr = "";
+    let txAmountInputStr = "";
+    let activeTxType = 'expense';
+    let selectedCatIconName = 'Folder';
+    let selectedCatColor = '#DFE6E9';
+    let editingTxId = null;
+    let editingCatId = null;
+    let editingSavingId = null;
+
+    // Default icon vector list map
+    const iconNameMap = {
+      Utensils: 'utensils',
+      Home: 'home',
+      Zap: 'zap',
+      Bike: 'bike',
+      Gamepad2: 'gamepad-2',
+      ShoppingBag: 'shopping-bag',
+      Folder: 'folder',
+      Target: 'target',
+      Users: 'users'
+    };
+
+    // Load Local Storage Data
+    function loadData() {
+      const stored = localStorage.getItem('khmer_budget_tracker_state');
+      if (stored) {
+        try {
+          appState = JSON.parse(stored);
+          // Fallbacks for structure checks
+          if (!appState.categories || appState.categories.length === 0) appState.categories = [...DEFAULT_CATEGORIES];
+          if (!appState.transactions) appState.transactions = [];
+          if (!appState.savings) appState.savings = [];
+        } catch(e) {
+          console.error("Local storage decode error", e);
+        }
+      } else {
+        appState.categories = [...DEFAULT_CATEGORIES];
+        saveData();
+      }
+    }
+
+    function saveData() {
+      localStorage.setItem('khmer_budget_tracker_state', JSON.stringify(appState));
+    }
+
+    // Money formatter
+    function formatMoney(amount) {
+      if (currentCurrency === 'KHR') {
+        return new Intl.NumberFormat('km-KH', { style: 'currency', currency: 'KHR', maximumFractionDigits: 0 }).format(amount);
+      } else {
+        const usdAmount = amount / EXCHANGE_RATE;
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(usdAmount);
+      }
+    }
+
+    function parseAmountInput(val) {
+      const parsed = parseFloat(val) || 0;
+      return currentCurrency === 'KHR' ? parsed : parsed * EXCHANGE_RATE;
+    }
+
+    // Tab switcher
+    function switchTab(tabId) {
+      const tabs = ['dashboard', 'transactions', 'categories', 'savings', 'settings'];
+      tabs.forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add('hidden');
+        document.getElementById(`nav-${t}`).className = "flex flex-col items-center flex-1 py-1 transition-all text-slate-400";
+      });
+
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+      document.getElementById(`nav-${tabId}`).className = "flex flex-col items-center flex-1 py-1 transition-all text-indigo-600 font-bold";
+      
+      // Update Lucide vectors
+      lucide.createIcons();
+    }
+
+    // Toggle Modal dialog helper
+    function toggleModal(modalId, show) {
+      const modal = document.getElementById(modalId);
+      if (show) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      } else {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    }
+
+    // Custom ABA Keypad controller
+    function pressKeypad(key, type) {
+      if (type === 'budget') {
+        if (key === 'C') {
+          budgetInputStr = "";
+        } else if (key === 'B') {
+          budgetInputStr = budgetInputStr.slice(0, -1);
+        } else {
+          if (budgetInputStr.length >= 10) return;
+          budgetInputStr += key;
+        }
+        const numericVal = parseFloat(budgetInputStr) || 0;
+        document.getElementById('budgetModalValDisplay').innerText = formatMoney(currentCurrency === 'KHR' ? numericVal : numericVal * EXCHANGE_RATE);
+      } else if (type === 'tx') {
+        if (key === 'C') {
+          txAmountInputStr = "";
+        } else if (key === 'B') {
+          txAmountInputStr = txAmountInputStr.slice(0, -1);
+        } else {
+          if (txAmountInputStr.length >= 10) return;
+          txAmountInputStr += key;
+        }
+        const numericVal = parseFloat(txAmountInputStr) || 0;
+        document.getElementById('txAmountValDisplay').innerText = formatMoney(currentCurrency === 'KHR' ? numericVal : numericVal * EXCHANGE_RATE);
+      }
+    }
+
+    // Toggle Currency
+    function toggleCurrency(curr) {
+      currentCurrency = curr;
+      const btnKHR = document.getElementById('btnCurrencyKHR');
+      const btnUSD = document.getElementById('btnCurrencyUSD');
+      if (curr === 'KHR') {
+        btnKHR.className = "px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-white text-indigo-600 shadow-sm";
+        btnUSD.className = "px-3 py-1.5 rounded-xl text-xs font-bold transition-all text-slate-400";
+      } else {
+        btnUSD.className = "px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-white text-indigo-600 shadow-sm";
+        btnKHR.className = "px-3 py-1.5 rounded-xl text-xs font-bold transition-all text-slate-400";
+      }
+      refreshUI();
+    }
+
+    // Main Monthly Budget configurations
+    function openBudgetConfig() {
+      budgetInputStr = (currentCurrency === 'KHR' ? appState.monthlyBudget : appState.monthlyBudget / EXCHANGE_RATE).toString();
+      document.getElementById('budgetModalValDisplay').innerText = formatMoney(appState.monthlyBudget);
+      toggleModal('budgetModal', true);
+    }
+
+    function saveMonthlyBudget() {
+      const parsedVal = parseFloat(budgetInputStr) || 0;
+      appState.monthlyBudget = currentCurrency === 'KHR' ? parsedVal : parsedVal * EXCHANGE_RATE;
+      saveData();
+      toggleModal('budgetModal', false);
+      refreshUI();
+    }
+
+    // -------------------------------------------------------------
+    // CORE UI COMPILER & RENDERERS
+    // -------------------------------------------------------------
+    function refreshUI() {
+      // 1. Calculations
+      const totalExpense = appState.transactions
+        .filter(t => t.type === 'expense')
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      const totalIncome = appState.transactions
+        .filter(t => t.type === 'income')
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      const currentBalance = totalIncome - totalExpense;
+      const remainingBudget = appState.monthlyBudget - totalExpense;
+      const spentPercentage = Math.min(Math.round((totalExpense / appState.monthlyBudget) * 100) || 0, 100);
+
+      // Set Main displays
+      document.getElementById('currentBalanceText').innerText = formatMoney(currentBalance);
+      document.getElementById('monthlyBudgetTargetText').innerText = `កញ្ចប់ថវិការួម: ${formatMoney(appState.monthlyBudget)}`;
+      document.getElementById('spentPercentageText').innerText = `${spentPercentage}%`;
+      document.getElementById('spentProgressBar').style.width = `${spentPercentage}%`;
+      document.getElementById('remainingBudgetText').innerText = formatMoney(remainingBudget);
+      document.getElementById('totalIncomeText').innerText = formatMoney(totalIncome);
+      document.getElementById('totalExpenseText').innerText = formatMoney(totalExpense);
+      document.getElementById('settingsBudgetBtn').innerText = formatMoney(appState.monthlyBudget);
+
+      // Rendering subdivisions
+      renderQuickSpendHub();
+      renderRecentTransactions();
+      renderCategorySpendingStats(totalExpense);
+      renderTransactionsList();
+      renderCategoriesConfigList();
+      renderSavingsGoalsList();
+      calculateBillSplit();
+
+      // Refresh Lucide Vector icons on screen
+      lucide.createIcons();
+    }
+
+    // Render Quick Spending Slide Launcher
+    function renderQuickSpendHub() {
+      const hub = document.getElementById('quickSpendSlider');
+      hub.innerHTML = "";
+      appState.categories.forEach(cat => {
+        const iconName = iconNameMap[cat.iconName] || 'folder';
+        hub.innerHTML += `
+          <button onclick="quickExpenseTrigger('${cat.id}')" class="flex-shrink-0 flex flex-col items-center justify-center p-3.5 w-20 bg-slate-50/70 hover:bg-indigo-50/40 hover:border-indigo-100 border border-slate-100/50 rounded-2xl transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0">
+            <div class="w-11 h-11 rounded-xl flex items-center justify-center shadow-sm mb-2" style="background-color: ${cat.color}20">
+              <i data-lucide="${iconName}" class="w-5.5 h-5.5" style="color: ${cat.color}"></i>
+            </div>
+            <span class="text-[10px] font-bold text-slate-700 text-center truncate w-full">${cat.name}</span>
+          </button>
+        `;
+      });
+    }
+
+    // Quick Trigger Launcher Expense Setup
+    function quickExpenseTrigger(catId) {
+      setTxType('expense');
+      const cat = appState.categories.find(c => c.id === catId);
+      document.getElementById('txTitleInput').value = cat ? cat.name : "ចំណាយ";
+      txAmountInputStr = "";
+      document.getElementById('txAmountValDisplay').innerText = formatMoney(0);
+      
+      editingTxId = null;
+      document.getElementById('txModalTitle').innerText = "បន្ថែមប្រតិបត្តិការ";
+      
+      // Select appropriate Category item
+      renderTxCategoryGridSelect(catId);
+      toggleModal('txModal', true);
+    }
+
+    // Render Recent Transactions
+    function renderRecentTransactions() {
+      const container = document.getElementById('recentTransactionsList');
+      container.innerHTML = "";
+      
+      if (appState.transactions.length === 0) {
+        container.innerHTML = `
+          <div class="p-10 text-center text-slate-400">
+            <i data-lucide="alert-circle" class="w-10 h-10 mx-auto mb-2 opacity-25 text-slate-500"></i>
+            <p class="text-xs font-medium">មិនទាន់មានប្រតិបត្តិការនៅឡើយទេ</p>
+          </div>
+        `;
+        return;
+      }
+
+      appState.transactions.slice(0, 5).map(tx => {
+        const cat = appState.categories.find(c => c.id === tx.categoryId) || { iconName: 'ShoppingBag', name: 'ផ្សេងៗ', color: '#868E96' };
+        const iconName = iconNameMap[cat.iconName] || 'shopping-bag';
+        const isExpense = tx.type === 'expense';
+        container.innerHTML += `
+          <div class="flex items-center justify-between p-3.5 hover:bg-slate-50/40 transition-all rounded-2xl">
+            <div class="flex items-center space-x-3.5">
+              <div class="w-11 h-11 rounded-xl flex items-center justify-center" style="background-color: ${cat.color}15">
+                <i data-lucide="${iconName}" class="w-5 h-5" style="color: ${cat.color}"></i>
+              </div>
+              <div>
+                <span class="font-bold text-slate-800 text-xs block">${tx.title}</span>
+                <span class="text-[9px] text-slate-400 font-bold block mt-0.5 uppercase">
+                  ${cat.name} • ${new Date(tx.date).toLocaleDateString('km-KH', { day: 'numeric', month: 'short' })}
+                </span>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="text-xs font-extrabold ${isExpense ? 'text-rose-500' : 'text-emerald-500'}">
+                ${isExpense ? '-' : '+'}${formatMoney(tx.amount)}
+              </span>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // Render Category spending Stats distribution bar
+    function renderCategorySpendingStats(totalExpense) {
+      const container = document.getElementById('categorySpendingChart');
+      container.innerHTML = "";
+
+      // Compute aggregates
+      const summary = {};
+      appState.categories.forEach(cat => summary[cat.id] = { ...cat, total: 0 });
+      appState.transactions.forEach(t => {
+        if (t.type === 'expense') {
+          if (summary[t.categoryId]) summary[t.categoryId].total += t.amount;
+        }
+      });
+
+      const items = Object.values(summary).filter(item => item.total > 0);
+      if (items.length === 0) {
+        container.innerHTML = `<p class="text-xs text-center text-slate-400 py-4">មិនទាន់មានទិន្នន័យចំណាយតាមប្រភេទនៅឡើយទេ</p>`;
+        return;
+      }
+
+      items.forEach(cat => {
+        const pct = Math.round((cat.total / totalExpense) * 100) || 0;
+        const iconName = iconNameMap[cat.iconName] || 'folder';
+        container.innerHTML += `
+          <div class="space-y-2">
+            <div class="flex justify-between items-center text-xs">
+              <div class="flex items-center space-x-2">
+                <i data-lucide="${iconName}" class="w-4 h-4" style="color: ${cat.color}"></i>
+                <span class="font-bold text-slate-700 ml-1">${cat.name}</span>
+              </div>
+              <div class="space-x-1.5 font-extrabold text-slate-800 text-[11px]">
+                <span>${formatMoney(cat.total)}</span>
+                <span class="text-slate-400 text-[10px]">(${pct}%)</span>
+              </div>
+            </div>
+            <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden p-0.5">
+              <div class="h-full rounded-full transition-all duration-500 shadow-xs" style="width: ${pct}%; background-color: ${cat.color}"></div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // Render Full Transactions History list with search
+    function renderTransactionsList() {
+      const container = document.getElementById('fullTransactionsList');
+      const searchVal = document.getElementById('searchInput').value.toLowerCase();
+      container.innerHTML = "";
+
+      const list = appState.transactions.filter(tx => {
+        const cat = appState.categories.find(c => c.id === tx.categoryId);
+        return tx.title.toLowerCase().includes(searchVal) || (cat && cat.name.toLowerCase().includes(searchVal));
+      });
+
+      document.getElementById('transactionsCountBadge').innerText = `សរុប ${list.length} ដង`;
+
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div class="p-12 text-center text-slate-400">
+            <i data-lucide="alert-circle" class="w-10 h-10 mx-auto mb-3 opacity-25 text-slate-500"></i>
+            <p class="text-xs">រកមិនឃើញប្រតិបត្តិការដែលអ្នកស្វែងរកទេ</p>
+          </div>
+        `;
+        return;
+      }
+
+      list.forEach(tx => {
+        const cat = appState.categories.find(c => c.id === tx.categoryId) || { iconName: 'ShoppingBag', name: 'ផ្សេងៗ', color: '#868E96' };
+        const iconName = iconNameMap[cat.iconName] || 'shopping-bag';
+        const isExpense = tx.type === 'expense';
+        container.innerHTML += `
+          <div class="flex items-center justify-between p-3 hover:bg-slate-50/50 transition-all rounded-2xl">
+            <div class="flex items-center space-x-3.5">
+              <div class="w-11 h-11 rounded-xl flex items-center justify-center" style="background-color: ${cat.color}15">
+                <i data-lucide="${iconName}" class="w-5 h-5" style="color: ${cat.color}"></i>
+              </div>
+              <div>
+                <span class="font-extrabold text-slate-800 text-xs block">${tx.title}</span>
+                <span class="text-[9px] text-slate-400 font-bold block mt-0.5">
+                  ${cat.name} • ${new Date(tx.date).toLocaleDateString('km-KH', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </span>
+              </div>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span class="text-xs font-extrabold ${isExpense ? 'text-rose-500' : 'text-emerald-500'}">
+                ${isExpense ? '-' : '+'}${formatMoney(tx.amount)}
+              </span>
+              <div class="flex items-center space-x-1 border-l border-slate-100 pl-2 ml-2">
+                <button onclick="openTransactionEdit('${tx.id}')" class="p-1.5 text-slate-400 hover:text-indigo-600 rounded-xl transition-all">
+                  <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                </button>
+                <button onclick="deleteTransaction('${tx.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-xl transition-all">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      lucide.createIcons();
+    }
+
+    // Render Categories setup list configs (Carefully structured without broken dynamic literals)
+    function renderCategoriesConfigList() {
+      const container = document.getElementById('categoriesList');
+      container.innerHTML = "";
+
+      appState.categories.forEach(cat => {
+        const spending = appState.transactions
+          .filter(t => t.type === 'expense' && t.categoryId === cat.id)
+          .reduce((sum, t) => sum + t.amount, 0);
+
+        const progressPct = cat.budget ? Math.min(Math.round((spending / cat.budget) * 100), 100) : 0;
+        const iconName = iconNameMap[cat.iconName] || 'folder';
+
+        let budgetDisplayHtml = "";
+        if (cat.budget > 0) {
+          budgetDisplayHtml = `
+            <div class="space-y-1.5">
+              <div class="flex justify-between text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                <span>ប្រើអស់ ${formatMoney(spending)}</span>
+                <span class="${progressPct >= 90 ? 'text-rose-500 font-extrabold' : 'text-slate-500'}">${progressPct}%</span>
+              </div>
+              <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden p-0.5">
+                <div class="h-full rounded-full transition-all duration-500" style="width: ${progressPct}%; background-color: ${progressPct >= 90 ? '#EF4444' : cat.color}"></div>
+              </div>
+            </div>
+          `;
+        }
+
+        container.innerHTML += `
+          <div class="bg-white rounded-3xl p-5 border border-slate-200/40 shadow-sm space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-3.5">
+                <div class="w-11 h-11 rounded-2xl flex items-center justify-center" style="background-color: ${cat.color}20">
+                  <i data-lucide="${iconName}" class="w-5.5 h-5.5" style="color: ${cat.color}"></i>
+                </div>
+                <div>
+                  <h4 class="font-extrabold text-slate-800 text-xs">${cat.name}</h4>
+                  <span class="text-[10px] text-slate-400 font-bold mt-0.5 block">
+                    ថវិកា៖ ${cat.budget ? formatMoney(cat.budget) : 'មិនបានកំណត់'}
+                  </span>
+                </div>
+              </div>
+
+              <div class="flex items-center space-x-1.5 bg-slate-50 p-1.5 rounded-xl border border-slate-200/20">
+                <button onclick="openCategoryEdit('${cat.id}')" class="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition-all">
+                  <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                </button>
+                <button onclick="deleteCategory('${cat.id}')" class="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-white rounded-lg transition-all">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+            ${budgetDisplayHtml}
+          </div>
+        `;
+      });
+    }
+
+    // Render Savings Goals
+    function renderSavingsGoalsList() {
+      const container = document.getElementById('savingsGoalsContainer');
+      container.innerHTML = "";
+
+      if (appState.savings.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white rounded-3xl p-6 text-center text-slate-400 border border-slate-200/40">
+            <i data-lucide="target" class="w-8 h-8 text-indigo-500 mx-auto opacity-30 mb-2"></i>
+            <p class="text-xs">មិនទាន់មានគោលដៅសន្សំនៅឡើយទេ</p>
+          </div>
+        `;
+        return;
+      }
+
+      appState.savings.forEach(goal => {
+        const pct = Math.min(Math.round((goal.saved / goal.target) * 100) || 0, 100);
+        container.innerHTML += `
+          <div class="bg-white rounded-3xl p-5 border border-slate-200/40 shadow-sm space-y-3">
+            <div class="flex justify-between items-start">
+              <div class="flex items-center space-x-2.5">
+                <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                  <i data-lucide="target" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <h4 class="font-extrabold text-slate-800 text-xs">${goal.title}</h4>
+                  <span class="text-[10px] text-slate-400 block font-medium">
+                    គោលដៅ៖ ${formatMoney(goal.target)}
+                  </span>
+                </div>
+              </div>
+
+              <div class="flex items-center space-x-1">
+                <button onclick="openSavingEdit('${goal.id}')" class="p-1.5 text-slate-400 hover:text-indigo-600">
+                  <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                </button>
+                <button onclick="deleteSavingGoal('${goal.id}')" class="p-1.5 text-slate-400 hover:text-rose-600">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="space-y-1.5">
+              <div class="flex justify-between text-[10px] text-slate-500 font-bold">
+                <span>សន្សំបាន ${formatMoney(goal.saved)}</span>
+                <span>${pct}%</span>
+              </div>
+              <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden p-0.5">
+                <div class="h-full rounded-full bg-gradient-to-r from-indigo-500 to-sky-400" style="width: ${pct}%"></div>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // -------------------------------------------------------------
+    // OPERATIONS SAVE & UTILS (TRANSACTION, CATEGORY, SAVINGS)
+    // -------------------------------------------------------------
+
+    // 1. Transactions CRUD
+    function openTransactionCreate() {
+      txAmountInputStr = "";
+      document.getElementById('txTitleInput').value = "";
+      document.getElementById('txAmountValDisplay').innerText = formatMoney(0);
+      document.getElementById('txDateInput').value = new Date().toISOString().split('T')[0];
+      editingTxId = null;
+      document.getElementById('txModalTitle').innerText = "បន្ថែមប្រតិបត្តិការ";
+      
+      setTxType('expense');
+      renderTxCategoryGridSelect(appState.categories[0].id);
+      toggleModal('txModal', true);
+    }
+
+    function setTxType(type) {
+      activeTxType = type;
+      const btnExpense = document.getElementById('btnTxExpense');
+      const btnIncome = document.getElementById('btnTxIncome');
+      const categoryWrapper = document.getElementById('txCategorySelectorWrapper');
+
+      if (type === 'expense') {
+        btnExpense.className = "flex-1 py-2.5 rounded-xl text-xs font-extrabold transition-all bg-white text-rose-600 shadow-sm";
+        btnIncome.className = "flex-1 py-2.5 rounded-xl text-xs font-extrabold transition-all text-slate-400";
+        categoryWrapper.classList.remove('hidden');
+      } else {
+        btnIncome.className = "flex-1 py-2.5 rounded-xl text-xs font-extrabold transition-all bg-white text-emerald-600 shadow-sm";
+        btnExpense.className = "flex-1 py-2.5 rounded-xl text-xs font-extrabold transition-all text-slate-400";
+        categoryWrapper.classList.add('hidden');
+      }
+    }
+
+    function renderTxCategoryGridSelect(selectedId) {
+      const container = document.getElementById('txCategoryGridSelect');
+      container.innerHTML = "";
+      appState.categories.forEach(cat => {
+        const isSelected = cat.id === selectedId;
+        const iconName = iconNameMap[cat.iconName] || 'folder';
+        container.innerHTML += `
+          <button type="button" onclick="selectTxCategory('${cat.id}')" id="txCatSelect-${cat.id}" class="p-2.5 border rounded-2xl flex flex-col items-center justify-center space-y-1 transition-all ${isSelected ? 'border-indigo-600 bg-indigo-50/60 text-indigo-700 shadow-sm' : 'border-slate-200'}">
+            <i data-lucide="${iconName}" class="w-5 h-5" style="color: ${cat.color}"></i>
+            <span class="text-[10px] font-bold text-center line-clamp-1 mt-1">${cat.name}</span>
+          </button>
+        `;
+      });
+      lucide.createIcons();
+    }
+
+    function selectTxCategory(catId) {
+      appState.categories.forEach(cat => {
+        const el = document.getElementById(`txCatSelect-${cat.id}`);
+        if (el) el.className = "p-2.5 border rounded-2xl flex flex-col items-center justify-center space-y-1 transition-all border-slate-200";
+      });
+      document.getElementById(`txCatSelect-${catId}`).className = "p-2.5 border rounded-2xl flex flex-col items-center justify-center space-y-1 transition-all border-indigo-600 bg-indigo-50/60 text-indigo-700 shadow-sm";
+      
+      // Update form parameter
+      const formCatInput = appState.categories.find(c => c.id === catId);
+      if (formCatInput) {
+        document.getElementById('txTitleInput').value = formCatInput.name;
+      }
+    }
+
+    function openTransactionEdit(txId) {
+      const tx = appState.transactions.find(t => t.id === txId);
+      if (!tx) return;
+
+      editingTxId = txId;
+      document.getElementById('txModalTitle').innerText = "កែសម្រួលប្រតិបត្តិការ";
+      
+      setTxType(tx.type);
+      document.getElementById('txTitleInput').value = tx.title;
+      txAmountInputStr = (currentCurrency === 'KHR' ? tx.amount : tx.amount / EXCHANGE_RATE).toString();
+      document.getElementById('txAmountValDisplay').innerText = formatMoney(tx.amount);
+      document.getElementById('txDateInput').value = tx.date;
+      
+      renderTxCategoryGridSelect(tx.categoryId);
+      toggleModal('txModal', true);
+    }
+
+    function saveTransaction() {
+      const title = document.getElementById('txTitleInput').value;
+      const amount = parseAmountInput(txAmountInputStr);
+      const date = document.getElementById('txDateInput').value;
+
+      let selectedCategoryId = appState.categories[0].id;
+      if (activeTxType === 'expense') {
+        const selectedEl = document.querySelector('[id^="txCatSelect-"].border-indigo-600');
+        if (selectedEl) selectedCategoryId = selectedEl.id.replace('txCatSelect-', '');
+      }
+
+      if (!title || !amount) {
+        alert('សូមបញ្ចូលចំណងជើង និងចំនួនទឹកប្រាក់!');
+        return;
+      }
+
+      const txData = {
+        title,
+        amount,
+        type: activeTxType,
+        categoryId: selectedCategoryId,
+        date
+      };
+
+      if (editingTxId) {
+        const index = appState.transactions.findIndex(t => t.id === editingTxId);
+        if (index !== -1) appState.transactions[index] = { ...appState.transactions[index], ...txData };
+      } else {
+        txData.id = 'tx-' + Date.now();
+        appState.transactions.unshift(txData);
+      }
+
+      saveData();
+      toggleModal('txModal', false);
+      refreshUI();
+    }
+
+    // Deletion
+    function deleteTransaction(txId) {
+      if (confirm('តើអ្នកពិតជាចង់លុបប្រតិបត្តិការនេះមែនទេ?')) {
+        appState.transactions = appState.transactions.filter(t => t.id !== txId);
+        saveData();
+        refreshUI();
+      }
+    }
+
+    // 2. Category Operations
+    function openCategoryCreate() {
+      editingCatId = null;
+      document.getElementById('catModalTitle').innerText = "បន្ថែមប្រភេទថ្មី";
+      document.getElementById('catNameInput').value = "";
+      document.getElementById('catBudgetInput').value = "";
+      selectCategoryIcon('Folder');
+      selectCategoryColor('#DFE6E9');
+      toggleModal('catModal', true);
+    }
+
+    function selectCategoryIcon(iconName) {
+      selectedCatIconName = iconName;
+      // Clear visual button frames
+      const keys = ['Utensils', 'Home', 'Zap', 'Bike', 'Gamepad2', 'ShoppingBag', 'Folder'];
+      keys.forEach(k => {
+        const btn = document.getElementById(`iconOpt-${k}`);
+        if (btn) btn.className = "py-3 rounded-xl border bg-white border-slate-200 flex items-center justify-center";
+      });
+      const selectedBtn = document.getElementById(`iconOpt-${iconName}`);
+      if (selectedBtn) selectedBtn.className = "py-3 rounded-xl border border-indigo-600 bg-indigo-50 flex items-center justify-center";
+    }
+
+    function selectCategoryColor(color) {
+      selectedCatColor = color;
+      const dots = document.querySelectorAll('.color-picker-dot');
+      dots.forEach(dot => {
+        dot.style.border = "1px solid rgba(0,0,0,0.1)";
+      });
+      dots.forEach(dot => {
+        if (dot.style.backgroundColor === color || dot.style.backgroundColor.includes(color.toLowerCase())) {
+          dot.style.border = "3px solid black";
+        }
+      });
+    }
+
+    function openCategoryEdit(catId) {
+      const cat = appState.categories.find(c => c.id === catId);
+      if (!cat) return;
+
+      editingCatId = catId;
+      document.getElementById('catModalTitle').innerText = "កែសម្រួលប្រភេទ";
+      document.getElementById('catNameInput').value = cat.name;
+      document.getElementById('catBudgetInput').value = cat.budget ? (currentCurrency === 'KHR' ? cat.budget : cat.budget / EXCHANGE_RATE) : "";
+      
+      selectCategoryIcon(cat.iconName || 'Folder');
+      selectCategoryColor(cat.color || '#DFE6E9');
+      toggleModal('catModal', true);
+    }
+
+    function saveCategory() {
+      const name = document.getElementById('catNameInput').value;
+      const budgetValStr = document.getElementById('catBudgetInput').value;
+      const budget = budgetValStr ? parseAmountInput(budgetValStr) : 0;
+
+      if (!name) {
+        alert('សូមបញ្ចូលឈ្មោះប្រភេទ!');
+        return;
+      }
+
+      const catData = {
+        name,
+        iconName: selectedCatIconName,
+        color: selectedCatColor,
+        budget
+      };
+
+      if (editingCatId) {
+        const index = appState.categories.findIndex(c => c.id === editingCatId);
+        if (index !== -1) appState.categories[index] = { ...appState.categories[index], ...catData };
+      } else {
+        catData.id = 'cat-' + Date.now();
+        appState.categories.push(catData);
+      }
+
+      saveData();
+      toggleModal('catModal', false);
+      refreshUI();
+    }
+
+    function deleteCategory(catId) {
+      if (confirm('តើអ្នកពិតជាចង់លុបប្រភេទចំណាយនេះមែនទេ? រាល់ប្រតិបត្តិការចាស់ៗនឹងត្រូវចាត់ចូលទៅក្នុងប្រភេទ "ផ្សេងៗ"')) {
+        appState.categories = appState.categories.filter(c => c.id !== catId);
+        // Map old tx records
+        appState.transactions.forEach(t => {
+          if (t.categoryId === catId) t.categoryId = 'cat-6'; // fallback to standard index
+        });
+        saveData();
+        refreshUI();
+      }
+    }
+
+    // 3. Savings Goals Operations
+    function openSavingCreate() {
+      editingSavingId = null;
+      document.getElementById('savingModalTitle').innerText = "បង្កើតគោលដៅសន្សំថ្មី";
+      document.getElementById('savingTitleInput').value = "";
+      document.getElementById('savingTargetInput').value = "";
+      document.getElementById('savingSavedInput').value = "";
+      toggleModal('savingModal', true);
+    }
+
+    function openSavingEdit(id) {
+      const goal = appState.savings.find(s => s.id === id);
+      if (!goal) return;
+
+      editingSavingId = id;
+      document.getElementById('savingModalTitle').innerText = "កែសម្រួលគោលដៅ";
+      document.getElementById('savingTitleInput').value = goal.title;
+      document.getElementById('savingTargetInput').value = currentCurrency === 'KHR' ? goal.target : goal.target / EXCHANGE_RATE;
+      document.getElementById('savingSavedInput').value = currentCurrency === 'KHR' ? goal.saved : goal.saved / EXCHANGE_RATE;
+      toggleModal('savingModal', true);
+    }
+
+    function saveSavingGoal() {
+      const title = document.getElementById('savingTitleInput').value;
+      const targetStr = document.getElementById('savingTargetInput').value;
+      const savedStr = document.getElementById('savingSavedInput').value;
+
+      if (!title || !targetStr) {
+        alert('សូមបំពេញព័ត៌មានឱ្យបានគ្រប់គ្រាន់!');
+        return;
+      }
+
+      const savingData = {
+        title,
+        target: parseAmountInput(targetStr),
+        saved: parseAmountInput(savedStr || '0')
+      };
+
+      if (editingSavingId) {
+        const index = appState.savings.findIndex(s => s.id === editingSavingId);
+        if (index !== -1) appState.savings[index] = { ...appState.savings[index], ...savingData };
+      } else {
+        savingData.id = 'saving-' + Date.now();
+        appState.savings.push(savingData);
+      }
+
+      saveData();
+      toggleModal('savingModal', false);
+      refreshUI();
+    }
+
+    function deleteSavingGoal(id) {
+      if (confirm('តើអ្នកពិតជាចង់លុបផែនការសន្សំនេះមែនទេ?')) {
+        appState.savings = appState.savings.filter(s => s.id !== id);
+        saveData();
+        refreshUI();
+      }
+    }
+
+    // 4. Bill Splitter Calculator
+    function calculateBillSplit() {
+      const totalVal = parseFloat(document.getElementById('splitterTotalInput').value) || 0;
+      const peopleVal = parseInt(document.getElementById('splitterPeopleInput').value) || 1;
+      const resultBox = document.getElementById('splitterResultBox');
+      const resultText = document.getElementById('splitterResultText');
+
+      if (totalVal > 0 && peopleVal >= 1) {
+        const calc = parseAmountInput(totalVal) / peopleVal;
+        resultText.innerText = formatMoney(calc);
+        resultBox.classList.remove('hidden');
+      } else {
+        resultBox.classList.add('hidden');
+      }
+    }
+
+    // 5. Export Report Handler
+    function openExportModal() {
+      let output = `=== របាយការណ៍ហិរញ្ញវត្ថុរបស់ខ្ញុំ ===\n`;
+      output += `កាលបរិច្ឆេទនាំចេញ៖ ${new Date().toLocaleDateString('km-KH')}\n`;
+      
+      const totalExpense = appState.transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+      const totalIncome = appState.transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+
+      output += `កញ្ចប់ថវិកាប្រចាំខែ៖ ${formatMoney(appState.monthlyBudget)}\n`;
+      output += `ចំណាយសរុប៖ ${formatMoney(totalExpense)}\n`;
+      output += `ចំណូលសរុប៖ ${formatMoney(totalIncome)}\n\n`;
+      output += `--- ប្រតិបត្តិការចុងក្រោយ ---\n`;
+      appState.transactions.slice(0, 15).forEach((tx, i) => {
+        const cat = appState.categories.find(c => c.id === tx.categoryId);
+        output += `${i+1}. [${tx.date}] ${tx.title}: ${tx.type === 'expense' ? '-' : '+'}${formatMoney(tx.amount)} (${cat ? cat.name : 'ផ្សេងៗ'})\n`;
+      });
+
+      document.getElementById('exportTextArea').value = output;
+      toggleModal('exportModal', true);
+    }
+
+    function copyExportToClipboard() {
+      const val = document.getElementById('exportTextArea').value;
+      const textarea = document.createElement('textarea');
+      textarea.value = val;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      alert('ចម្លងរបាយការណ៍ទៅក្នុង Clipboard ជោគជ័យ!');
+    }
+
+    // Reset System data
+    function resetAllData() {
+      if (confirm('តើអ្នកពិតជាចង់សម្អាតទិន្នន័យទាំងអស់ឡើងវិញមែនទេ? សកម្មភាពនេះមិនអាចត្រឡប់ក្រោយបានឡើយ។')) {
+        localStorage.removeItem('khmer_budget_tracker_state');
+        appState = {
+          monthlyBudget: 1200000,
+          categories: [...DEFAULT_CATEGORIES],
+          transactions: [],
+          savings: []
+        };
+        saveData();
+        refreshUI();
+      }
+    }
+
+    // Page initializer on Window ready
+    window.onload = function() {
+      loadData();
+      refreshUI();
+    };
+  </script>
+</body>
+</html>
